@@ -1,0 +1,772 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>化學反應速率互動學習儀表板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+            startup: { typeset: false }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+    <style>
+        body {
+            overflow-x: hidden;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 40vh;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 50vh;
+                max-height: 500px;
+            }
+        }
+        .nav-btn.active {
+            background-color: #eff6ff;
+            color: #2563eb;
+            border-left: 4px solid #2563eb;
+            font-weight: 600;
+        }
+        @media (max-width: 767px) {
+            .nav-btn.active {
+                border-left: none;
+                border-bottom: 4px solid #2563eb;
+            }
+        }
+        .section-content {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .section-content.active {
+            display: block;
+            opacity: 1;
+        }
+        .quiz-option.selected-correct {
+            background-color: #dcfce7;
+            border-color: #22c55e;
+            color: #166534;
+        }
+        .quiz-option.selected-wrong {
+            background-color: #fee2e2;
+            border-color: #ef4444;
+            color: #991b1b;
+        }
+        .quiz-option:hover:not(:disabled) {
+            background-color: #f1f5f9;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans flex flex-col md:flex-row h-screen">
+
+
+    <!-- Chosen Palette: Calm Harmony (Slate-50 for main bg, White for cards, Blue-600/Blue-100 for primary accents, Slate-800 for text) -->
+    <!-- Application Structure Plan: The application uses a dashboard layout with a sidebar navigation (horizontal on mobile). It is divided into five thematic sections: 1. Core Concepts (Visualizing rates), 2. Stoichiometry (Interactive relationship calculator), 3. Measurement (Categorized cards for methods), 4. Rate Law (Theory and unit table), 5. Interactive Quiz. This structure was chosen to break down dense chemical kinetics into logical, digestible chunks, allowing users to explore theoretical concepts and immediately interact with them (e.g., calculating rates, taking a quiz) without losing their place in the document. -->
+    <!-- Visualization & Content Choices: Overview -> Inform -> Line Chart (Chart.js) showing reaction concentration changes over time to build intuition. Stoichiometry -> Compare/Change -> Interactive HTML form acting as a calculator to reinforce ratio concepts. Measurement -> Organize -> CSS Grid of informational cards using Unicode icons for quick visual parsing. Rate Law -> Inform -> Styled HTML Table for clear unit comparisons. Quiz -> Evaluate -> JS-driven interactive multiple-choice module. All choices rely on HTML/CSS/Canvas, explicitly avoiding SVG and Mermaid. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+
+    <nav class="bg-white shadow-md md:w-64 flex-shrink-0 z-10 flex flex-row md:flex-col overflow-x-auto md:overflow-x-hidden md:overflow-y-auto">
+        <div class="p-6 hidden md:block border-b border-slate-100">
+            <h1 class="text-xl font-bold text-blue-700 tracking-wider">化學反應速率</h1>
+            <p class="text-xs text-slate-500 mt-1">互動學習儀表板</p>
+        </div>
+        <div class="flex flex-row md:flex-col p-2 md:p-4 gap-2 w-full">
+            <button class="nav-btn active flex-shrink-0 md:w-full text-left px-4 py-3 rounded-lg text-sm transition-colors text-slate-600 hover:bg-slate-50" data-target="sec-overview">
+                <span class="mr-2">📈</span> 基礎概念
+            </button>
+            <button class="nav-btn flex-shrink-0 md:w-full text-left px-4 py-3 rounded-lg text-sm transition-colors text-slate-600 hover:bg-slate-50" data-target="sec-stoich">
+                <span class="mr-2">⚖️</span> 係數關係
+            </button>
+            <button class="nav-btn flex-shrink-0 md:w-full text-left px-4 py-3 rounded-lg text-sm transition-colors text-slate-600 hover:bg-slate-50" data-target="sec-measure">
+                <span class="mr-2">📏</span> 測量方法
+            </button>
+            <button class="nav-btn flex-shrink-0 md:w-full text-left px-4 py-3 rounded-lg text-sm transition-colors text-slate-600 hover:bg-slate-50" data-target="sec-ratelaw">
+                <span class="mr-2">📝</span> 速率定律
+            </button>
+            <button class="nav-btn flex-shrink-0 md:w-full text-left px-4 py-3 rounded-lg text-sm transition-colors text-slate-600 hover:bg-slate-50" data-target="sec-quiz">
+                <span class="mr-2">🧠</span> 自我檢測
+            </button>
+        </div>
+    </nav>
+
+
+    <main class="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50 relative w-full">
+        <div class="max-w-5xl mx-auto">
+
+
+            <section id="sec-overview" class="section-content active">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-slate-800 mb-2">反應速率的基礎概念</h2>
+                    <p class="text-slate-600 leading-relaxed bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                        本區塊介紹化學反應速率的核心定義與數學表示法。透過下方的動態折線圖，您可以直觀地觀察反應物濃度如何隨時間減少，以及生成物濃度如何隨時間增加。了解這些基礎，有助於掌握後續更複雜的動力學概念。
+                    </p>
+                </div>
+
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center">
+                        <h3 class="text-lg font-semibold text-blue-700 mb-4">核心定義</h3>
+                        <p class="text-sm text-slate-700 mb-4">單位時間內，反應物濃度的消耗量或生成物濃度的生成量。</p>
+                        <div class="bg-slate-50 p-3 rounded-lg text-sm font-mono text-slate-800 mb-4">
+                            反應物：$r = - \frac{\Delta[\text{反應物}]}{\Delta t}$
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-lg text-sm font-mono text-slate-800 mb-4">
+                            生成物：$r = \frac{\Delta[\text{生成物}]}{\Delta t}$
+                        </div>
+                        <p class="text-xs text-slate-500">單位：$M \cdot s^{-1}$ 或 $atm \cdot s^{-1}$</p>
+                    </div>
+                    
+                    <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-2">濃度對時間變化關係圖</h3>
+                        <p class="text-xs text-slate-500 mb-4">範例反應：$2NO_2(g) \rightarrow 2NO(g) + O_2(g)$</p>
+                        <div class="chart-container">
+                            <canvas id="concentrationChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <section id="sec-stoich" class="section-content">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-slate-800 mb-2">反應速率與係數關係</h2>
+                    <p class="text-slate-600 leading-relaxed bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                        此區塊探討同一個化學反應中，不同物質的反應速率之間的數學關聯。您可以利用下方的互動計算機，輸入自訂的化學計量係數與某一物質的速率，系統將自動推算出其他物質的速率，協助您驗證「速率比等於係數比」的法則。
+                    </p>
+                </div>
+
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <h3 class="text-xl font-bold text-blue-700 mb-4">理論關係</h3>
+                        <p class="text-slate-700 mb-4">對於一般化學反應：<br><span class="font-bold text-lg text-slate-900">$aA + bB \rightarrow cC$</span></p>
+                        <ul class="space-y-3 text-slate-600 list-disc pl-5">
+                            <li><strong>速率比 = 係數比</strong><br>$r_A : r_B : r_C = a : b : c$</li>
+                            <li><strong>關係等式</strong><br>$\frac{1}{a} r_A = \frac{1}{b} r_B = \frac{1}{c} r_C$</li>
+                            <li><strong>氣體總壓</strong><br>若反應前後氣體分子數不等（$\Delta n \ne 0$），可用總壓變化速率來表示整體反應速率。</li>
+                        </ul>
+                    </div>
+
+
+                    <div class="bg-blue-50 p-6 rounded-2xl shadow-sm border border-blue-100">
+                        <h3 class="text-xl font-bold text-slate-800 mb-4">互動速率計算機</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">設定反應係數 ($a, b, c$)</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="number" id="coefA" value="2" min="1" class="w-16 p-2 border rounded text-center"> <span class="font-bold">A</span> + 
+                                    <input type="number" id="coefB" value="1" min="1" class="w-16 p-2 border rounded text-center"> <span class="font-bold">B</span> $\rightarrow$
+                                    <input type="number" id="coefC" value="3" min="1" class="w-16 p-2 border rounded text-center"> <span class="font-bold">C</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">輸入 A 的消耗速率 ($r_A$ in M/s)</label>
+                                <input type="number" id="rateA" value="0.4" step="0.1" min="0" class="w-full p-2 border rounded">
+                            </div>
+                            <button id="calcRatesBtn" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition">計算 B 與 C 的速率</button>
+                            
+                            <div class="mt-4 p-4 bg-white rounded-lg border border-slate-200 hidden" id="calcResults">
+                                <p class="text-slate-700">依據速率比 <span id="resRatio" class="font-bold"></span>：</p>
+                                <p class="text-lg mt-2">$r_B = $ <span id="resRateB" class="font-bold text-blue-600"></span> M/s</p>
+                                <p class="text-lg">$r_C = $ <span id="resRateC" class="font-bold text-green-600"></span> M/s</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <section id="sec-measure" class="section-content">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-slate-800 mb-2">反應速率的測量方法</h2>
+                    <p class="text-slate-600 leading-relaxed bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                        不同的化學反應具有不同的巨觀特性。本區塊整理了實驗室中常見的五種測量反應速率的物理指標。點擊各個卡片，即可了解該測量方法的適用條件與常見的化學反應實例。
+                    </p>
+                </div>
+
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-t-red-400 cursor-pointer hover:shadow-md transition">
+                        <div class="text-4xl mb-3">🎨</div>
+                        <h3 class="text-lg font-bold text-slate-800 mb-2">顏色深淺</h3>
+                        <p class="text-sm text-slate-600 mb-3">適用於反應物或生成物具有明顯顏色的系統。</p>
+                        <div class="bg-slate-50 p-2 rounded text-xs font-mono text-slate-700">
+                            例: $N_2O_4 \rightarrow 2NO_2$<br>(無色 $\rightarrow$ 紅棕色)
+                        </div>
+                    </div>
+
+
+                    <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-t-blue-400 cursor-pointer hover:shadow-md transition">
+                        <div class="text-4xl mb-3">🎈</div>
+                        <h3 class="text-lg font-bold text-slate-800 mb-2">總壓 / 總體積</h3>
+                        <p class="text-sm text-slate-600 mb-3">適用於反應前後氣體分子數「不相等」的系統 ($\Delta n \ne 0$)。</p>
+                        <div class="bg-slate-50 p-2 rounded text-xs font-mono text-slate-700">
+                            例: $2N_2O_5 \rightarrow 4NO_2 + O_2$<br>(氣體總數增加，總壓上升)
+                        </div>
+                    </div>
+
+
+                    <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-t-yellow-400 cursor-pointer hover:shadow-md transition">
+                        <div class="text-4xl mb-3">⚡</div>
+                        <h3 class="text-lg font-bold text-slate-800 mb-2">導電度</h3>
+                        <p class="text-sm text-slate-600 mb-3">適用於水溶液中離子數目或種類有顯著變化的系統。</p>
+                        <div class="bg-slate-50 p-2 rounded text-xs font-mono text-slate-700">
+                            例: 反應產生沉澱或將強電解質變為弱電解質，導致導電度下降。
+                        </div>
+                    </div>
+
+
+                    <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-t-green-400 cursor-pointer hover:shadow-md transition">
+                        <div class="text-4xl mb-3">🧪</div>
+                        <h3 class="text-lg font-bold text-slate-800 mb-2">pH 值</h3>
+                        <p class="text-sm text-slate-600 mb-3">適用於反應過程中涉及 $H^+$ 或 $OH^-$ 消耗或生成的系統。</p>
+                        <div class="bg-slate-50 p-2 rounded text-xs font-mono text-slate-700">
+                            例: $C_2H_5OH + HI \rightarrow C_2H_5I + H_2O$<br>(酸性減弱，pH上升)
+                        </div>
+                    </div>
+
+
+                    <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-t-slate-400 cursor-pointer hover:shadow-md transition">
+                        <div class="text-4xl mb-3">⬇️</div>
+                        <h3 class="text-lg font-bold text-slate-800 mb-2">沉澱量</h3>
+                        <p class="text-sm text-slate-600 mb-3">適用於產生固體沉澱的反應，藉由測量沉澱物質量變化推算。</p>
+                        <div class="bg-slate-50 p-2 rounded text-xs font-mono text-slate-700">
+                            例: $Na_2S_2O_3 + 2HCl \rightarrow 2NaCl + SO_2 + S\downarrow + H_2O$<br>(測量硫黃色沉澱)
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <section id="sec-ratelaw" class="section-content">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-slate-800 mb-2">速率定律與速率常數</h2>
+                    <p class="text-slate-600 leading-relaxed bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                        本區塊解析反應速率與反應物濃度之間的數學關係，即「速率定律式」。特別注意，反應級數無法單從反應方程式看出，必須由實驗數據推導。透過下方的表格，您可以清楚歸納速率常數 $k$ 的單位如何隨著反應總級數而改變。
+                    </p>
+                </div>
+
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <h3 class="text-xl font-bold text-blue-700 mb-4">1. 速率定律式</h3>
+                        <div class="bg-blue-50 text-center py-4 rounded-lg mb-4 text-xl font-bold font-mono">
+                            $r = k[A]^m[B]^n$
+                        </div>
+                        <ul class="space-y-3 text-slate-700 list-disc pl-5">
+                            <li><strong>$m, n$ 反應級數：</strong>必須由<span class="text-red-600 font-bold">實驗數據</span>求得，不一定等於平衡係數。</li>
+                            <li><strong>總級數：</strong> $m + n$</li>
+                            <li><strong>平均速率 vs 瞬時速率：</strong><br>
+                                平均：濃度對時間圖的「割線斜率」。<br>
+                                瞬時：濃度對時間圖的「切線斜率」。
+                            </li>
+                        </ul>
+                    </div>
+
+
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <h3 class="text-xl font-bold text-slate-800 mb-4">2. 速率常數 ($k$)</h3>
+                        <p class="text-slate-700 mb-2"><strong>影響因素：</strong>反應物本性、溫度、催化劑。</p>
+                        <p class="text-sm text-red-500 mb-4">※ 濃度、壓力、反應熱皆不影響 $k$ 值。</p>
+                        
+                        <h4 class="font-bold text-slate-700 mb-2">$k$ 的單位通式：$M^{1-n} \cdot t^{-1}$</h4>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-100 text-slate-600 text-sm">
+                                        <th class="p-3 border border-slate-200">反應總級數 ($n$)</th>
+                                        <th class="p-3 border border-slate-200">單位 (以 M, s 為例)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="p-3 border border-slate-200 text-center font-bold">0 級</td>
+                                        <td class="p-3 border border-slate-200 font-mono">$M \cdot s^{-1}$</td>
+                                    </tr>
+                                    <tr class="bg-slate-50">
+                                        <td class="p-3 border border-slate-200 text-center font-bold">1 級</td>
+                                        <td class="p-3 border border-slate-200 font-mono">$s^{-1}$</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-3 border border-slate-200 text-center font-bold">2 級</td>
+                                        <td class="p-3 border border-slate-200 font-mono">$M^{-1} \cdot s^{-1}$</td>
+                                    </tr>
+                                    <tr class="bg-slate-50">
+                                        <td class="p-3 border border-slate-200 text-center font-bold">3 級</td>
+                                        <td class="p-3 border border-slate-200 font-mono">$M^{-2} \cdot s^{-1}$</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <section id="sec-quiz" class="section-content">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-slate-800 mb-2">觀念自我檢測</h2>
+                    <p class="text-slate-600 leading-relaxed bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                        透過這個互動式測驗模組，評估您對化學反應速率各項概念的理解程度。系統會提供即時反饋與解析，答錯也沒關係，這是學習過程中最重要的一環。準備好就開始作答吧！
+                    </p>
+                </div>
+
+
+                <div class="bg-white rounded-2xl shadow-md border border-slate-200 p-6 max-w-3xl mx-auto">
+                    <div id="quizContainer">
+                        <div class="flex justify-between items-center mb-6">
+                            <span id="quizProgress" class="text-sm font-bold text-blue-600 bg-blue-100 px-3 py-1 rounded-full">問題 1 / 10</span>
+                            <span id="quizScore" class="text-sm font-medium text-slate-500">得分: 0</span>
+                        </div>
+                        
+                        <h3 id="quizQuestion" class="text-xl font-medium text-slate-800 mb-6 min-h-[60px]">加載題目中...</h3>
+                        
+                        <div id="quizOptions" class="space-y-3 mb-6">
+                        </div>
+
+
+                        <div id="quizFeedback" class="hidden p-4 rounded-lg mb-6 text-sm">
+                        </div>
+
+
+                        <div class="flex justify-between items-center">
+                            <button id="hintBtn" class="text-sm text-yellow-600 bg-yellow-50 px-4 py-2 rounded-lg hover:bg-yellow-100 transition hidden">💡 顯示提示</button>
+                            <button id="nextBtn" class="ml-auto bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition hidden">下一題</button>
+                        </div>
+                    </div>
+                    
+                    <div id="quizResults" class="hidden text-center py-8">
+                        <div class="text-6xl mb-4">🏆</div>
+                        <h3 class="text-2xl font-bold text-slate-800 mb-2">測驗完成！</h3>
+                        <p class="text-lg text-slate-600 mb-6">您的最終得分： <span id="finalScore" class="font-bold text-blue-600 text-3xl"></span> / 10</p>
+                        <button id="restartQuizBtn" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition">重新測驗</button>
+                    </div>
+                </div>
+            </section>
+
+
+        </div>
+    </main>
+
+
+    <script>
+        const appState = {
+            currentSection: 'sec-overview',
+            quizData: null,
+            currentQuestionIndex: 0,
+            score: 0,
+            chartInstance: null
+        };
+
+
+        const rawQuizData = {
+          "questions": [
+            {
+              "questionNumber": 1,
+              "question": "在反應式 $2A + B \\rightarrow 3C$ 中，若 A 的平均消耗速率為 $0.4\\ M/s$，則 C 的平均生成速率為何？",
+              "answerOptions": [
+                {"text": "$0.6\\ M/s$", "rationale": "根據速率比等於係數比，$r_A : r_C = 2 : 3$，因此 $r_C = 1.5 \\times r_A = 0.6\\ M/s$。", "isCorrect": true},
+                {"text": "$0.4\\ M/s$", "rationale": "這忽略了係數的不同，A 與 C 的係數分別為 2 與 3。", "isCorrect": false},
+                {"text": "$1.2\\ M/s$", "rationale": "這是誤將 A 的速率乘以 C 的係數，未考慮 A 的係數。", "isCorrect": false},
+                {"text": "$0.2\\ M/s$", "rationale": "這是在計算過程中發生了錯誤的比例分配。", "isCorrect": false}
+              ],
+              "hint": "利用速率與平衡係數成正比的關係進行計算。"
+            },
+            {
+              "questionNumber": 2,
+              "question": "定義反應速率時，為何在反應物濃度的變化量前要加上負號？",
+              "answerOptions": [
+                {"text": "因為反應物濃度隨時間減少，變化量為負，加負號可使速率變為正值", "rationale": "反應速率在定義上恆為正值，而反應物濃度會減少，故其變化量為負值。", "isCorrect": true},
+                {"text": "因為反應是可逆的", "rationale": "這與反應是否可逆無關，而是定義上的數學處理方式。", "isCorrect": false},
+                {"text": "因為反應熱為負值", "rationale": "反應熱（焓變）與反應速率的定義方式無直接邏輯關係。", "isCorrect": false},
+                {"text": "這只是一個化學界的傳統，沒有科學意義", "rationale": "這是有明確數學邏輯的，是為了符合速率恆正的物理意義。", "isCorrect": false}
+              ],
+              "hint": "思考反應過程中反應物濃度的增減情況。"
+            },
+            {
+              "questionNumber": 3,
+              "question": "下列哪一個反應最適合以「總壓力的變化」來測量反應速率？（定溫、定容下）",
+              "answerOptions": [
+                {"text": "$N_2(g) + 3H_2(g) \\rightarrow 2NH_3(g)$", "rationale": "此反應左側氣體係數和為 4，右側為 2，總分子數有變化，故壓力會隨之改變。", "isCorrect": true},
+                {"text": "$H_2(g) + I_2(g) \\rightarrow 2HI(g)$", "rationale": "此反應兩側氣體係數和皆為 2，定溫定容下總壓不會改變。", "isCorrect": false},
+                {"text": "$Ag^+(aq) + Cl^-(aq) \\rightarrow AgCl(s)$", "rationale": "此反應主要涉及水溶液中的離子與固體沉澱，不涉及氣體壓力變化。", "isCorrect": false},
+                {"text": "$N_2(g) + O_2(g) \\rightarrow 2NO(g)$", "rationale": "此反應兩側氣體係數和相等，總壓力不變。", "isCorrect": false}
+              ],
+              "hint": "檢查化學反應式中，反應物與生成物的氣體分子係數總和是否相等。"
+            },
+            {
+              "questionNumber": 4,
+              "question": "關於速率常數 $k$ 的敘述，下列何者正確？",
+              "answerOptions": [
+                {"text": "$k$ 的數值會隨溫度改變而改變", "rationale": "速率常數 $k$ 受溫度、催化劑及反應物本性的影響。", "isCorrect": true},
+                {"text": "$k$ 的數值會隨反應物濃度增加而變大", "rationale": "速率常數 $k$ 與起始濃度、壓力無關。", "isCorrect": false},
+                {"text": "$k$ 的單位在任何反應中皆相同", "rationale": "$k$ 的單位取決於反應的總級數。", "isCorrect": false},
+                {"text": "$k$ 的數值會隨反應熱 $\\Delta H$ 的大小而改變", "rationale": "反應熱是熱力學性質，不直接影響動力學中的速率常數。", "isCorrect": false}
+              ],
+              "hint": "速率常數並非真正的「常數」，它會受到某些環境物理量的影響。"
+            },
+            {
+              "questionNumber": 5,
+              "question": "若一個反應的速率定律為 $r = k[A]^1[B]^2$，則此反應的總級數為幾級？",
+              "answerOptions": [
+                {"text": "3 級", "rationale": "總級數為各反應物分級數之和，即 $1 + 2 = 3$。", "isCorrect": true},
+                {"text": "1 級", "rationale": "這僅是反應物 A 的級數。", "isCorrect": false},
+                {"text": "2 級", "rationale": "這僅是反應物 B 的級數。", "isCorrect": false},
+                {"text": "無法判斷，需看平衡係數", "rationale": "速率定律式中已經明確給出了級數。級數不需要透過平衡係數判斷。", "isCorrect": false}
+              ],
+              "hint": "總級數是指速率定律式中所有濃度項次方數的總和。"
+            },
+            {
+              "questionNumber": 6,
+              "question": "若速率常數 $k$ 的單位為 $s^{-1}$，則該反應為幾級反應？",
+              "answerOptions": [
+                {"text": "1 級", "rationale": "當總級數為 1 時，$k = r / [M]^1 = (M \\cdot s^{-1}) / M = s^{-1}$。", "isCorrect": true},
+                {"text": "0 級", "rationale": "0 級反應的 $k$ 單位應與速率相同，為 $M \\cdot s^{-1}$。", "isCorrect": false},
+                {"text": "2 級", "rationale": "2 級反應的 $k$ 單位為 $M^{-1} \\cdot s^{-1}$。", "isCorrect": false},
+                {"text": "3 級", "rationale": "3 級反應的 $k$ 單位為 $M^{-2} \\cdot s^{-1}$。", "isCorrect": false}
+              ],
+              "hint": "利用速率定律式 $r = k[C]^n$ 推導單位的關係。"
+            },
+            {
+              "questionNumber": 7,
+              "question": "在濃度對時間的關係圖中，「某時刻」的瞬時速率相當於該點的什麼性質？",
+              "answerOptions": [
+                {"text": "切線斜率的絕對值", "rationale": "瞬時速率定義為極短時間內的變化率，數學上即為曲線在該點的切線斜率。", "isCorrect": true},
+                {"text": "割線斜率的絕對值", "rationale": "割線斜率代表的是兩點之間的「平均速率」。", "isCorrect": false},
+                {"text": "曲線下的面積", "rationale": "曲線下面積在不同的物理圖形中有不同意義，但在此圖中不代表速率。", "isCorrect": false},
+                {"text": "座標軸的截距", "rationale": "截距通常代表初始濃度或最終平衡濃度，而非反應速率。", "isCorrect": false}
+              ],
+              "hint": "區分「一段時間」與「某一瞬間」在圖形幾何上的差異。"
+            },
+            {
+              "questionNumber": 8,
+              "question": "若反應 $A \\rightarrow B$ 為零級反應，當 A 的濃度增加為 2 倍時，反應速率會發生什麼變化？",
+              "answerOptions": [
+                {"text": "速率不變", "rationale": "零級反應的速率定律為 $r = k[A]^0 = k$，即速率與濃度無關。", "isCorrect": true},
+                {"text": "速率變為 2 倍", "rationale": "這是 1 級反應的特徵。", "isCorrect": false},
+                {"text": "速率變為 4 倍", "rationale": "這是 2 級反應的特徵。", "isCorrect": false},
+                {"text": "速率變為 $\\sqrt{2}$ 倍", "rationale": "這是 $0.5$ 級反應的特徵。", "isCorrect": false}
+              ],
+              "hint": "零級反應中，濃度項的次方是多少？"
+            },
+            {
+              "questionNumber": 9,
+              "question": "下列哪種物理量最不適合用來測定 $H_2(g) + Cl_2(g) \\rightarrow 2HCl(g)$ 的反應速率？",
+              "answerOptions": [
+                {"text": "定溫定容下的總壓力", "rationale": "此反應左右氣體分子係數和相等（$1+1=2$），總壓力不隨反應進行而改變。", "isCorrect": true},
+                {"text": "顏色的深淺", "rationale": "由於 $Cl_2$ 為黃綠色，顏色會隨反應進行逐漸變淡，可用於觀測。", "isCorrect": false},
+                {"text": "pH 值的變化", "rationale": "生成物 $HCl$ 溶於水顯強酸性，可測量 pH 值隨時間下降的速率。", "isCorrect": false},
+                {"text": "溶液的導電度", "rationale": "$HCl$ 在水中會解離，離子濃度增加會導致導電度顯著上升。", "isCorrect": false}
+              ],
+              "hint": "檢查反應前後的氣體分子數是否發生了變化。"
+            },
+            {
+              "questionNumber": 10,
+              "question": "在實驗中，如果要找出反應物 A 的反應級數，應該如何操作實驗數據？",
+              "answerOptions": [
+                {"text": "改變 A 的濃度，並保持其他反應物濃度不變", "rationale": "這是「變因控制法」，透過單一變項的改變來觀察速率的變化量。", "isCorrect": true},
+                {"text": "同時增加所有反應物的濃度", "rationale": "這樣無法區分速率增加是哪一個反應物造成的貢獻。", "isCorrect": false},
+                {"text": "保持溫度不變即可，濃度可以隨意調整", "rationale": "如果多個反應物濃度同時改變，數據分析會變得非常困難且不具代表性。", "isCorrect": false},
+                {"text": "直接套用化學反應式的平衡係數", "rationale": "化學級數與係數不一定相等，必須經由實驗求得。", "isCorrect": false}
+              ],
+              "hint": "思考科學實驗中「控制變因」的基本原則。"
+            }
+          ]
+        };
+        appState.quizData = rawQuizData.questions;
+
+
+        function initNavigation() {
+            const buttons = document.querySelectorAll('.nav-btn');
+            const sections = document.querySelectorAll('.section-content');
+
+
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = btn.getAttribute('data-target');
+                    
+                    buttons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+
+                    sections.forEach(sec => {
+                        sec.classList.remove('active');
+                        if (sec.id === targetId) {
+                            setTimeout(() => {
+                                sec.classList.add('active');
+                                if (targetId === 'sec-overview' && appState.chartInstance === null) {
+                                    initChart();
+                                }
+                            }, 50);
+                        }
+                    });
+                });
+            });
+        }
+
+
+        function initChart() {
+            const ctx = document.getElementById('concentrationChart').getContext('2d');
+            
+            const timeData = [0, 5, 10, 15, 20];
+            const no2Data = [0.100, 0.078, 0.064, 0.055, 0.048];
+            const noData = [0, 0.022, 0.036, 0.045, 0.052];
+            const o2Data = [0, 0.011, 0.018, 0.023, 0.026];
+
+
+            appState.chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: timeData,
+                    datasets: [
+                        {
+                            label: '[NO2] (反應物)',
+                            data: no2Data,
+                            borderColor: 'rgb(239, 68, 68)',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: '[NO] (生成物)',
+                            data: noData,
+                            borderColor: 'rgb(59, 130, 246)',
+                            backgroundColor: 'transparent',
+                            tension: 0.3
+                        },
+                        {
+                            label: '[O2] (生成物)',
+                            data: o2Data,
+                            borderColor: 'rgb(34, 197, 94)',
+                            backgroundColor: 'transparent',
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '濃度隨時間變化圖 (單位: M)'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y + ' M';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '時間 (秒)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '濃度 (M)'
+                            },
+                            min: 0,
+                            max: 0.12
+                        }
+                    }
+                }
+            });
+        }
+
+
+        function initCalculator() {
+            const btn = document.getElementById('calcRatesBtn');
+            btn.addEventListener('click', () => {
+                const a = parseFloat(document.getElementById('coefA').value);
+                const b = parseFloat(document.getElementById('coefB').value);
+                const c = parseFloat(document.getElementById('coefC').value);
+                const rA = parseFloat(document.getElementById('rateA').value);
+
+
+                if (isNaN(a) || isNaN(b) || isNaN(c) || isNaN(rA) || a <= 0 || b <= 0 || c <= 0 || rA < 0) {
+                    alert('請輸入有效的正數值。');
+                    return;
+                }
+
+
+                const rB = (b / a) * rA;
+                const rC = (c / a) * rA;
+
+
+                document.getElementById('resRatio').textContent = `${a} : ${b} : ${c}`;
+                document.getElementById('resRateB').textContent = rB.toFixed(3);
+                document.getElementById('resRateC').textContent = rC.toFixed(3);
+                
+                const resDiv = document.getElementById('calcResults');
+                resDiv.classList.remove('hidden');
+            });
+        }
+
+
+        function initQuiz() {
+            appState.currentQuestionIndex = 0;
+            appState.score = 0;
+            
+            document.getElementById('restartQuizBtn').addEventListener('click', () => {
+                appState.currentQuestionIndex = 0;
+                appState.score = 0;
+                document.getElementById('quizResults').classList.add('hidden');
+                document.getElementById('quizContainer').classList.remove('hidden');
+                renderQuestion();
+            });
+
+
+            document.getElementById('nextBtn').addEventListener('click', () => {
+                appState.currentQuestionIndex++;
+                if (appState.currentQuestionIndex < appState.quizData.length) {
+                    renderQuestion();
+                } else {
+                    showQuizResults();
+                }
+            });
+
+
+            document.getElementById('hintBtn').addEventListener('click', () => {
+                const q = appState.quizData[appState.currentQuestionIndex];
+                const feedbackDiv = document.getElementById('quizFeedback');
+                feedbackDiv.innerHTML = `<span class="font-bold text-yellow-700">💡 提示：</span> ${q.hint}`;
+                feedbackDiv.className = 'p-4 rounded-lg mb-6 text-sm bg-yellow-50 text-yellow-800 border border-yellow-200 block';
+            });
+
+
+            renderQuestion();
+        }
+
+
+        function renderQuestion() {
+            const q = appState.quizData[appState.currentQuestionIndex];
+            
+            document.getElementById('quizProgress').textContent = `問題 ${appState.currentQuestionIndex + 1} / ${appState.quizData.length}`;
+            document.getElementById('quizScore').textContent = `得分: ${appState.score}`;
+            document.getElementById('quizQuestion').innerHTML = q.question;
+            
+            const optionsContainer = document.getElementById('quizOptions');
+            optionsContainer.innerHTML = '';
+            
+            q.answerOptions.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'quiz-option w-full text-left p-4 rounded-xl border border-slate-200 transition-colors bg-slate-50 text-slate-700';
+                btn.innerHTML = `<span class="inline-block w-6 font-bold">${String.fromCharCode(65 + index)}.</span> ${opt.text}`;
+                btn.onclick = () => handleAnswerOptionClick(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+
+
+            document.getElementById('quizFeedback').classList.add('hidden');
+            document.getElementById('nextBtn').classList.add('hidden');
+            
+            if (q.hint) {
+                document.getElementById('hintBtn').classList.remove('hidden');
+            } else {
+                document.getElementById('hintBtn').classList.add('hidden');
+            }
+
+
+            if (window.MathJax) {
+                window.MathJax.typesetPromise();
+            }
+        }
+
+
+        function handleAnswerOptionClick(selectedIndex, clickedBtn) {
+            const q = appState.quizData[appState.currentQuestionIndex];
+            const isCorrect = q.answerOptions[selectedIndex].isCorrect;
+            const buttons = document.querySelectorAll('.quiz-option');
+            
+            buttons.forEach((btn, idx) => {
+                btn.disabled = true;
+                btn.classList.remove('hover:bg-slate-100');
+                if (q.answerOptions[idx].isCorrect) {
+                    btn.classList.add('selected-correct');
+                } else if (idx === selectedIndex) {
+                    btn.classList.add('selected-wrong');
+                } else {
+                    btn.style.opacity = '0.5';
+                }
+            });
+
+
+            if (isCorrect) {
+                appState.score++;
+                document.getElementById('quizScore').textContent = `得分: ${appState.score}`;
+            }
+
+
+            const feedbackDiv = document.getElementById('quizFeedback');
+            const rationale = q.answerOptions[selectedIndex].rationale;
+            
+            if (isCorrect) {
+                feedbackDiv.innerHTML = `<div class="font-bold mb-1">✅ 答對了！</div>${rationale}`;
+                feedbackDiv.className = 'p-4 rounded-lg mb-6 text-sm bg-green-50 text-green-800 border border-green-200 block';
+            } else {
+                feedbackDiv.innerHTML = `<div class="font-bold mb-1">❌ 答錯了。</div>${rationale}`;
+                feedbackDiv.className = 'p-4 rounded-lg mb-6 text-sm bg-red-50 text-red-800 border border-red-200 block';
+            }
+
+
+            document.getElementById('hintBtn').classList.add('hidden');
+            document.getElementById('nextBtn').classList.remove('hidden');
+
+
+            if (window.MathJax) {
+                window.MathJax.typesetPromise([feedbackDiv]);
+            }
+        }
+
+
+        function showQuizResults() {
+            document.getElementById('quizContainer').classList.add('hidden');
+            document.getElementById('quizResults').classList.remove('hidden');
+            document.getElementById('finalScore').textContent = appState.score;
+        }
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initNavigation();
+            initCalculator();
+            initQuiz();
+            
+            setTimeout(() => {
+                if (window.MathJax) {
+                    window.MathJax.typesetPromise();
+                }
+                initChart();
+            }, 100);
+        });
+    </script>
+</body>
+</html>
