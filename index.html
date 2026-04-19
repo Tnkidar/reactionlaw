@@ -222,6 +222,9 @@
                                 </thead>
                                 <tbody id="scoreBoardBody"></tbody>
                             </table>
+                            <div id="leaderboardError" class="hidden p-4 text-xs text-red-500 bg-red-50 rounded-lg mt-4 text-center">
+                                無法讀取排行榜。請檢查您的 Firebase Firestore 安全規則是否已開啟。
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -240,22 +243,20 @@
 
 
         // ==========================================
-        // ⚠️ GitHub 部署設定：請在此處替換為您的 Firebase 設定
+        // ✨ 已替換為您的 Firebase 設定
         // ==========================================
         const myFirebaseConfig = {
-           apiKey: "AIzaSyAcGJmYLQl74d8jXmWljsnxvJ12ajHg0d0",
-    authDomain: "reactionlaw.firebaseapp.com",
-    projectId: "reactionlaw",
-
-
-    storageBucket: "reactionlaw.firebasestorage.app",
-    messagingSenderId: "145423454066",
-    appId: "1:145423454066:web:1e35845b2499ba111797eb",
-    measurementId: "G-XEJNBZF0JS"
+            apiKey: "AIzaSyAcGJmYLQl74d8jXmWljsnxvJ12ajHg0d0",
+            authDomain: "reactionlaw.firebaseapp.com",
+            projectId: "reactionlaw",
+            storageBucket: "reactionlaw.firebasestorage.app",
+            messagingSenderId: "145423454066",
+            appId: "1:145423454066:web:1e35845b2499ba111797eb",
+            measurementId: "G-XEJNBZF0JS"
         };
         
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : myFirebaseConfig;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'my-github-chem-app';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'reactionlaw-web-app';
 
 
         const app = initializeApp(firebaseConfig);
@@ -266,16 +267,23 @@
         let user = null;
 
 
-        signInAnonymously(auth).catch(err => console.error("Auth error", err));
+        // 身份驗證監聽
         onAuthStateChanged(auth, (u) => {
             user = u;
-            if (u) listenToScores();
+            if (u) {
+                console.log("登入成功");
+                listenToScores();
+            } else {
+                signInAnonymously(auth).catch(err => console.error("匿名登入失敗", err));
+            }
         });
 
 
+        // 排行榜即時監聽
         function listenToScores() {
             if (!user) return;
             const quizCol = collection(db, 'artifacts', appId, 'public', 'data', 'quiz_results');
+            
             onSnapshot(quizCol, (snapshot) => {
                 const results = [];
                 snapshot.forEach(doc => results.push(doc.data()));
@@ -288,10 +296,15 @@
                         <td class="py-3 text-right text-slate-400 text-xs">${r.timestamp ? new Date(r.timestamp.seconds * 1000).toLocaleDateString() : '處理中'}</td>
                     </tr>
                 `).join('');
+                document.getElementById('leaderboardError').classList.add('hidden');
+            }, (error) => {
+                console.error("Firestore 錯誤:", error);
+                document.getElementById('leaderboardError').classList.remove('hidden');
             });
         }
 
 
+        // 成績存儲
         window.saveScore = async function(name, score) {
             if (!user) return;
             try {
@@ -302,15 +315,17 @@
                     timestamp: serverTimestamp(),
                     uid: user.uid
                 });
-                document.getElementById('saveStatus').textContent = "✅ 成績已成功上傳雲端！";
-                document.getElementById('saveStatus').classList.add('text-green-500', 'font-bold');
+                document.getElementById('saveStatus').textContent = "✅ 成績已上傳成功！";
+                document.getElementById('saveStatus').className = "text-sm text-green-500 font-bold mb-6 italic";
             } catch (e) {
-                document.getElementById('saveStatus').textContent = "❌ 儲存失敗。";
+                console.error("存儲失敗:", e);
+                document.getElementById('saveStatus').textContent = "❌ 存儲失敗，請檢查權限。";
+                document.getElementById('saveStatus').className = "text-sm text-red-500 font-bold mb-6 italic";
             }
         }
 
 
-        // --- App 邏輯 ---
+        // --- 核心邏輯與亂數題目 ---
         const appState = {
             studentName: '',
             currentQuestionIndex: 0,
@@ -319,91 +334,91 @@
                 {
                     "question": "在反應式 $2A + B \\rightarrow 3C$ 中，若 A 的平均消耗速率為 $0.4\\ M/s$，則 C 的平均生成速率為何？",
                     "answerOptions": [
-                        {"text": "$0.4\\ M/s$", "rationale": "這忽略了係數的不同，A 與 C 的係數分別為 2 與 3。", "isCorrect": false},
-                        {"text": "$0.6\\ M/s$", "rationale": "根據速率比等於係數比，$r_A : r_C = 2 : 3$，故 $r_C = 1.5 \\times 0.4 = 0.6$。", "isCorrect": true},
-                        {"text": "$1.2\\ M/s$", "rationale": "未考慮 A 的係數。", "isCorrect": false},
+                        {"text": "$0.4\\ M/s$", "rationale": "未考慮係數比 (2:3)。", "isCorrect": false},
+                        {"text": "$0.6\\ M/s$", "rationale": "速率比 = 係數比，$r_C = (3/2) \\times 0.4 = 0.6$。", "isCorrect": true},
+                        {"text": "$1.2\\ M/s$", "rationale": "計算錯誤。", "isCorrect": false},
                         {"text": "$0.2\\ M/s$", "rationale": "比例分配錯誤。", "isCorrect": false}
                     ]
                 },
                 {
                     "question": "定義反應速率時，為何在反應物濃度的變化量前要加上負號？",
                     "answerOptions": [
-                        {"text": "表示反應是可逆的", "rationale": "與可逆性無關。", "isCorrect": false},
-                        {"text": "表示反應熱為負值", "rationale": "反應熱與速率定義無關。", "isCorrect": false},
-                        {"text": "單純化學界的傳統", "rationale": "是有數學邏輯的定義，目的是使速率恆正。", "isCorrect": false},
-                        {"text": "確保速率變為正值", "rationale": "反應物濃度隨時間減少，變化量為負，加負號可使速率恆為正。", "isCorrect": true}
+                        {"text": "表示反應是可逆的", "rationale": "無關。", "isCorrect": false},
+                        {"text": "確保速率變為正值", "rationale": "反應物濃度減少(變化量負)，加負號變正。", "isCorrect": true},
+                        {"text": "表示反應熱為負值", "rationale": "無關。", "isCorrect": false},
+                        {"text": "科學界傳統", "rationale": "是有數學邏輯的。", "isCorrect": false}
                     ]
                 },
                 {
-                    "question": "下列哪一個反應最適合以「總壓力的變化」來測量反應速率？（定溫定容）",
+                    "question": "下列哪一個反應最適合以「總壓力的變化」來測量反應速率？（定溫定容下）",
                     "answerOptions": [
-                        {"text": "$H_2(g) + I_2(g) \\rightarrow 2HI(g)$", "rationale": "兩側係數相等，總壓不變。", "isCorrect": false},
-                        {"text": "$N_2(g) + 3H_2(g) \\rightarrow 2NH_3(g)$", "rationale": "左側係數 4，右側 2，分子數有變化，壓力會改變。", "isCorrect": true},
+                        {"text": "$H_2(g) + I_2(g) \\rightarrow 2HI(g)$", "rationale": "兩側係數和相等，壓力不變。", "isCorrect": false},
+                        {"text": "$N_2(g) + 3H_2(g) \\rightarrow 2NH_3(g)$", "rationale": "分子數 4 到 2，壓力會變化。", "isCorrect": true},
                         {"text": "$Ag^+(aq) + Cl^-(aq) \\rightarrow AgCl(s)$", "rationale": "無氣體壓力變化。", "isCorrect": false},
-                        {"text": "$N_2(g) + O_2(g) \\rightarrow 2NO(g)$", "rationale": "兩側係數相等，壓力不變。", "isCorrect": false}
+                        {"text": "$N_2(g) + O_2(g) \\rightarrow 2NO(g)$", "rationale": "壓力不變。", "isCorrect": false}
                     ]
                 },
                 {
                     "question": "關於速率常數 $k$ 的敘述，下列何者正確？",
                     "answerOptions": [
-                        {"text": "會隨濃度增加而變大", "rationale": "$k$ 與起始濃度無關。", "isCorrect": false},
-                        {"text": "單位在任何反應皆相同", "rationale": "$k$ 的單位取決於總級數。", "isCorrect": false},
-                        {"text": "會隨溫度改變而改變", "rationale": "$k$ 受溫度、催化劑及反應物本性影響。", "isCorrect": true},
-                        {"text": "會隨反應熱 $\\Delta H$ 的大小而改變", "rationale": "反應熱不直接影響 $k$。", "isCorrect": false}
+                        {"text": "會隨濃度增加而變大", "rationale": "$k$ 不受濃度影響。", "isCorrect": false},
+                        {"text": "單位在任何反應皆相同", "rationale": "隨總級數改變。", "isCorrect": false},
+                        {"text": "會隨溫度改變而改變", "rationale": "$k$ 受溫度影響。", "isCorrect": true},
+                        {"text": "隨反應熱大小改變", "rationale": "熱力學與動力學概念不同。", "isCorrect": false}
                     ]
                 },
                 {
                     "question": "若反應速率定律為 $r = k[A]^1[B]^2$，則此反應的總級數為？",
                     "answerOptions": [
-                        {"text": "1 級", "rationale": "僅為 A 的級數。", "isCorrect": false},
-                        {"text": "2 級", "rationale": "僅為 B 的級數。", "isCorrect": false},
-                        {"text": "無法判斷", "rationale": "速率定律式中已經明確給出。", "isCorrect": false},
-                        {"text": "3 級", "rationale": "總級數為次方之和：$1 + 2 = 3$。", "isCorrect": true}
+                        {"text": "1 級", "rationale": "僅 A 的級數。", "isCorrect": false},
+                        {"text": "3 級", "rationale": "級數和 $1+2=3$。", "isCorrect": true},
+                        {"text": "2 級", "rationale": "僅 B 的級數。", "isCorrect": false},
+                        {"text": "無法判斷", "rationale": "已給出定律式。", "isCorrect": false}
                     ]
                 },
                 {
                     "question": "若速率常數 $k$ 的單位為 $s^{-1}$，則該反應為幾級反應？",
                     "answerOptions": [
-                        {"text": "0 級", "rationale": "0 級單位為 $M \\cdot s^{-1}$。", "isCorrect": false},
-                        {"text": "1 級", "rationale": "1 級反應單位為 $s^{-1}$。", "isCorrect": true},
-                        {"text": "2 級", "rationale": "2 級單位為 $M^{-1} \\cdot s^{-1}$。", "isCorrect": false},
-                        {"text": "3 級", "rationale": "3 級單位為 $M^{-2} \\cdot s^{-1}$。", "isCorrect": false}
+                        {"text": "0 級", "rationale": "單位為 $M \\cdot s^{-1}$。", "isCorrect": false},
+                        {"text": "1 級", "rationale": "1 級反應 $k$ 單位為 $s^{-1}$。", "isCorrect": true},
+                        {"text": "2 級", "rationale": "單位為 $M^{-1}s^{-1}$。", "isCorrect": false},
+                        {"text": "3 級", "rationale": "單位為 $M^{-2}s^{-1}$。", "isCorrect": false}
                     ]
                 },
                 {
                     "question": "在濃度對時間的關係圖中，「某時刻」的瞬時速率相當於該點的？",
                     "answerOptions": [
-                        {"text": "割線斜率的絕對值", "rationale": "割線斜率代表「平均速率」。", "isCorrect": false},
-                        {"text": "切線斜率的絕對值", "rationale": "瞬時速率即為該點的切線斜率。", "isCorrect": true},
-                        {"text": "曲線下的面積", "rationale": "無直接物理意義。", "isCorrect": false},
-                        {"text": "座標軸的截距", "rationale": "代表初始或最終濃度。", "isCorrect": false}
+                        {"text": "割線斜率的絕對值", "rationale": "代表平均速率。", "isCorrect": false},
+                        {"text": "切線斜率的絕對值", "rationale": "即瞬時變化率。", "isCorrect": true},
+                        {"text": "曲線下的面積", "rationale": "無直接速率意義。", "isCorrect": false},
+                        {"text": "座標軸的截距", "rationale": "代表濃度。", "isCorrect": false}
                     ]
                 },
                 {
-                    "question": "若反應 $A \\rightarrow B$ 為營級反應，當 A 的濃度增加為 2 倍時，反應速率會發生什麼變化？",
+                    "question": "若反應 $A \\rightarrow B$ 為零級反應，當 A 的濃度增加為 2 倍時，反應速率會發生什麼變化？",
                     "answerOptions": [
-                        {"text": "速率變為 2 倍", "rationale": "這是 1 級反應特徵。", "isCorrect": false},
-                        {"text": "速率變為 4 倍", "rationale": "這是 2 級反應特徵。", "isCorrect": false},
-                        {"text": "速率不變", "rationale": "零級反應與濃度無關 ($r = k$)。", "isCorrect": true},
-                        {"text": "速率變為 $\\sqrt{2}$ 倍", "rationale": "這是 0.5 級特徵。", "isCorrect": false}
+                        {"text": "速率變為 2 倍", "rationale": "這是 1 級反應。", "isCorrect": false},
+                        {"text": "速率變為 4 倍", "rationale": "這是 2 級反應。", "isCorrect": false},
+                        {"text": "速率不變", "rationale": "零級反應與濃度無關。", "isCorrect": true},
+                        {"text": "速率變為 $\\sqrt{2}$ 倍", "rationale": "0.5 級特徵。", "isCorrect": false}
                     ]
                 },
                 {
-                    "question": "下列哪種物理量「最不適合」測定 $H_2(g) + Cl_2(g) \\rightarrow 2HCl(g)$ 的速率？",
+                    "question": "下列哪種物理量最不適合測定 $H_2(g) + Cl_2(g) \\rightarrow 2HCl(g)$ 的速率？",
                     "answerOptions": [
-                        {"text": "顏色的深淺", "rationale": "$Cl_2$ 為黃綠色，顏色會變淡。", "isCorrect": false},
-                        {"text": "pH 值的變化", "rationale": "$HCl$ 為強酸，可測 pH。", "isCorrect": false},
-                        {"text": "定溫定容下的總壓力", "rationale": "反應左右分子係數和相等，總壓不變。", "isCorrect": true},
-                        {"text": "溶液的導電度", "rationale": "$HCl$ 解離會增加導電度。", "isCorrect": false}
+                        {"text": "顏色的深淺", "rationale": "$Cl_2$ 有顏色，可測。", "isCorrect": false},
+                        {"text": "pH 值的變化", "rationale": "$HCl$ 酸性可測。", "isCorrect": false},
+                        {"text": "定溫定容下的總壓力", "rationale": "左右分子數相等，總壓不變。", "isCorrect": true},
+                        {"text": "溶液的導電度", "rationale": "$HCl$ 解離可測。", "isCorrect": false}
                     ]
                 },
                 {
                     "question": "在實驗中，如果要找出反應物 A 的反應級數，應該如何操作？",
                     "answerOptions": [
-                        {"text": "同時增加所有物濃度", "rationale": "無法判斷各別貢獻。", "isCorrect": false},
-                        {"text": "保持溫度不變即可，濃度隨意", "rationale": "多變項改變使數據失去意義。", "isCorrect": false},
-                        {"text": "改變 A 濃度，保持其他濃度不變", "rationale": "觀察單一變項對速率的影響。", "isCorrect": true},
-                        {"text": "直接套用平衡係數", "rationale": "必須由實驗求得。", "isCorrect": false}
+                        {"text": "同時增加所有濃度", "rationale": "無法區分影響。", "isCorrect": false},
+                        {"text": "保持溫度不變即可", "rationale": "濃度需受控。", "isCorrect": false},
+                        {"text": "改變 A 濃度，保持其他不變", "rationale": "控制變因法。", "isCorrect": true},
+                        {"text": "直接套用平衡係數", "rationale": "不可直接套用。", "isCorrect": false}
                     ]
                 }
             ]
@@ -488,35 +503,43 @@
             document.getElementById('quizQuestion').innerHTML = q.question;
             const container = document.getElementById('quizOptions');
             container.innerHTML = '';
-            q.answerOptions.forEach((opt, idx) => {
+            
+            // 亂數排序選項
+            const shuffledOptions = [...q.answerOptions].sort(() => Math.random() - 0.5);
+            
+            shuffledOptions.forEach((opt, idx) => {
                 const btn = document.createElement('button');
                 btn.className = "quiz-option w-full text-left p-4 rounded-xl border bg-slate-50 hover:border-blue-400 transition-colors";
                 btn.innerHTML = `<strong>${String.fromCharCode(65+idx)}.</strong> ${opt.text}`;
-                btn.onclick = () => selectAnswer(idx, btn);
+                btn.onclick = () => selectAnswer(opt, btn, shuffledOptions);
                 container.appendChild(btn);
             });
+            
             document.getElementById('quizFeedback').className = "hidden";
             document.getElementById('nextBtn').classList.add('hidden');
             refreshMath(document.getElementById('quizContainer'));
         }
 
 
-        function selectAnswer(idx, btn) {
-            const q = appState.quizData[appState.currentQuestionIndex];
-            const correct = q.answerOptions[idx].isCorrect;
+        function selectAnswer(selectedOpt, btn, currentOptions) {
+            const correct = selectedOpt.isCorrect;
             document.querySelectorAll('.quiz-option').forEach(b => b.disabled = true);
             btn.classList.add(correct ? 'selected-correct' : 'selected-wrong');
+            
             if (!correct) {
-                document.querySelectorAll('.quiz-option').forEach((b, i) => {
-                    if (q.answerOptions[i].isCorrect) b.classList.add('selected-correct');
+                const allBtns = document.querySelectorAll('.quiz-option');
+                currentOptions.forEach((opt, i) => {
+                    if (opt.isCorrect) allBtns[i].classList.add('selected-correct');
                 });
             } else {
                 appState.score++;
             }
+            
             const fb = document.getElementById('quizFeedback');
-            fb.innerHTML = `<strong>${correct ? '✅ 答對了！' : '❌ 答錯囉。'}</strong><br>${q.answerOptions[idx].rationale}`;
+            fb.innerHTML = `<strong>${correct ? '✅ 答對了！' : '❌ 答錯囉。'}</strong><br>${selectedOpt.rationale}`;
             fb.className = `p-4 rounded-lg mb-6 text-sm block ${correct ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`;
             document.getElementById('nextBtn').classList.remove('hidden');
+            document.getElementById('quizScoreDisplay').textContent = `得分: ${appState.score}`;
             refreshMath(fb);
         }
 
