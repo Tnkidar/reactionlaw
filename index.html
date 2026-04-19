@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>化學反應速率互動學習儀表板 (GitHub 部署版)</title>
+    <title>化學反應速率互動學習儀表板</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- MathJax 數學公式渲染 -->
@@ -16,9 +16,7 @@
             options: { enableMenu: false },
             startup: {
                 pageReady: () => {
-                    return MathJax.startup.defaultPageReady().then(() => {
-                        console.log('MathJax 載入完成');
-                    });
+                    return MathJax.startup.defaultPageReady();
                 }
             }
         };
@@ -60,108 +58,72 @@
         <div class="max-w-5xl mx-auto">
 
 
-            <!-- Section: Overview -->
             <section id="sec-overview" class="section-content active">
-                <div class="mb-8">
-                    <h2 class="text-3xl font-bold text-slate-800 mb-2">反應速率的基礎概念</h2>
-                    <p class="text-slate-600 leading-relaxed bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                        本區塊介紹化學反應速率的核心定義。透過下方圖表觀察反應物與生成物的濃度隨時間變化的關係。
-                    </p>
-                </div>
-
-
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <h2 class="text-3xl font-bold mb-6 text-slate-800">反應速率基礎</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center">
                         <h3 class="text-lg font-semibold text-blue-700 mb-4">核心定義</h3>
                         <div class="space-y-4">
-                            <div class="bg-slate-50 p-4 rounded-lg text-sm">
-                                反應物速率：$r = - \frac{\Delta[\text{反應物}]}{\Delta t}$
-                            </div>
-                            <div class="bg-slate-50 p-4 rounded-lg text-sm">
-                                生成物速率：$r = \frac{\Delta[\text{生成物}]}{\Delta t}$
-                            </div>
+                            <div class="bg-slate-50 p-4 rounded-lg text-sm">反應物速率：$r = - \frac{\Delta[R]}{\Delta t}$</div>
+                            <div class="bg-slate-50 p-4 rounded-lg text-sm">生成物速率：$r = \frac{\Delta[P]}{\Delta t}$</div>
                         </div>
                     </div>
                     <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                        <div class="chart-container">
-                            <canvas id="concentrationChart"></canvas>
-                        </div>
+                        <div class="chart-container"><canvas id="concentrationChart"></canvas></div>
                     </div>
                 </div>
             </section>
 
 
-            <!-- Section: Stoichiometry -->
             <section id="sec-stoich" class="section-content">
-                <div class="mb-8">
-                    <h2 class="text-3xl font-bold text-slate-800 mb-2">反應速率與係數關係</h2>
-                    <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100 mb-8 shadow-inner">
-                        <h3 class="text-xl font-bold text-slate-800 mb-4">互動速率計算機</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium mb-1 text-slate-600">係數比 A : B : C</label>
-                                <div class="flex gap-2">
-                                    <input type="number" id="coefA" value="2" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none">
-                                    <input type="number" id="coefB" value="1" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none">
-                                    <input type="number" id="coefC" value="3" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none">
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium mb-1 text-slate-600">輸入 $r_A$ (M/s)</label>
-                                <input type="number" id="rateA" value="0.4" step="0.1" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none">
-                            </div>
-                            <div class="flex items-end">
-                                <button id="calcRatesBtn" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700 transition shadow-md">點我計算</button>
+                <h2 class="text-3xl font-bold mb-6 text-slate-800">反應速率與係數關係</h2>
+                <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100 shadow-inner">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4">互動速率計算機</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1 text-slate-600">係數比 A : B : C</label>
+                            <div class="flex gap-2">
+                                <input type="number" id="coefA" value="2" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none">
+                                <input type="number" id="coefB" value="1" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none">
+                                <input type="number" id="coefC" value="3" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none">
                             </div>
                         </div>
-                        <div id="calcResults" class="mt-8 p-6 bg-white rounded-xl border border-blue-100 hidden shadow-sm">
-                            <h4 class="font-bold text-blue-700 mb-3 border-b pb-2">計算結果：</h4>
-                            <div class="space-y-3">
-                                <p class="text-xl">$r_B =$ <span id="resRateB" class="font-bold text-blue-600"></span> $M/s$</p>
-                                <p class="text-xl">$r_C =$ <span id="resRateC" class="font-bold text-green-600"></span> $M/s$</p>
-                            </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1 text-slate-600">輸入 $r_A$ (M/s)</label>
+                            <input type="number" id="rateA" value="0.4" step="0.1" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none">
+                        </div>
+                        <div class="flex items-end">
+                            <button id="calcRatesBtn" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700 transition shadow-md">點我計算</button>
+                        </div>
+                    </div>
+                    <div id="calcResults" class="mt-8 p-6 bg-white rounded-xl border border-blue-100 hidden shadow-sm">
+                        <h4 class="font-bold text-blue-700 mb-3 border-b pb-2">計算結果：</h4>
+                        <div class="space-y-3">
+                            <p class="text-xl">$r_B =$ <span id="resRateB" class="font-bold text-blue-600"></span> $M/s$</p>
+                            <p class="text-xl">$r_C =$ <span id="resRateC" class="font-bold text-green-600"></span> $M/s$</p>
                         </div>
                     </div>
                 </div>
             </section>
 
 
-            <!-- Section: Measurement -->
             <section id="sec-measure" class="section-content">
-                <h2 class="text-3xl font-bold text-slate-800 mb-6">測量方法概覽</h2>
+                <h2 class="text-3xl font-bold mb-6 text-slate-800 text-center md:text-left">測量方法概覽</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div class="bg-white p-6 rounded-xl border-t-4 border-red-400 shadow-sm">
-                        <div class="text-3xl mb-2">🎨</div>
-                        <h3 class="font-bold mb-2">顏色深淺</h3>
-                        <p class="text-sm text-slate-600">$H_2 + I_2 \rightarrow 2HI$<br>(紫色 $\rightarrow$ 無色)</p>
-                    </div>
-                    <div class="bg-white p-6 rounded-xl border-t-4 border-blue-400 shadow-sm">
-                        <div class="text-3xl mb-2">🎈</div>
-                        <h3 class="font-bold mb-2">總壓/總體積</h3>
-                        <p class="text-sm text-slate-600">$2N_2O_5 \rightarrow 4NO_2 + O_2$<br>(氣體分子數增加)</p>
-                    </div>
-                    <div class="bg-white p-6 rounded-xl border-t-4 border-yellow-400 shadow-sm">
-                        <div class="text-3xl mb-2">⚡</div>
-                        <h3 class="font-bold mb-2">導電度</h3>
-                        <p class="text-sm text-slate-600">離子濃度或種類變化顯著時適用。</p>
-                    </div>
+                    <div class="bg-white p-6 rounded-xl border-t-4 border-red-400 shadow-sm">🎨 顏色深淺</div>
+                    <div class="bg-white p-6 rounded-xl border-t-4 border-blue-400 shadow-sm">🎈 總壓/總體積</div>
+                    <div class="bg-white p-6 rounded-xl border-t-4 border-yellow-400 shadow-sm">⚡ 導電度</div>
                 </div>
             </section>
 
 
-            <!-- Section: Rate Law -->
             <section id="sec-ratelaw" class="section-content">
-                <h2 class="text-3xl font-bold text-slate-800 mb-6">速率定律式 $r = k[A]^m[B]^n$</h2>
+                <h2 class="text-3xl font-bold mb-6 text-slate-800">速率定律式 $r = k[A]^m[B]^n$</h2>
                 <div class="bg-white p-6 rounded-2xl shadow-sm border mb-8">
-                    <h3 class="font-bold text-blue-700 mb-4">速率常數 $k$ 的單位參考表</h3>
+                    <h3 class="font-bold text-blue-700 mb-4 text-center md:text-left">速率常數 $k$ 的單位參考表</h3>
                     <div class="overflow-x-auto">
                         <table class="w-full border-collapse">
-                            <thead>
-                                <tr class="bg-slate-50 text-slate-600 text-left">
-                                    <th class="p-3 border">級數 $n$</th>
-                                    <th class="p-3 border">單位 ($M, s$)</th>
-                                </tr>
-                            </thead>
+                            <thead><tr class="bg-slate-50 text-slate-600 text-left"><th class="p-3 border">級數 $n$</th><th class="p-3 border">單位 ($M, s$)</th></tr></thead>
                             <tbody>
                                 <tr><td class="p-3 border">0 級</td><td class="p-3 border font-mono">$M \cdot s^{-1}$</td></tr>
                                 <tr><td class="p-3 border">1 級</td><td class="p-3 border font-mono">$s^{-1}$</td></tr>
@@ -173,16 +135,15 @@
             </section>
 
 
-            <!-- Section: Quiz -->
             <section id="sec-quiz" class="section-content">
-                <h2 class="text-3xl font-bold text-slate-800 mb-6">觀念自我檢測</h2>
+                <h2 class="text-3xl font-bold text-slate-800 mb-6 text-center md:text-left">觀念自我檢測</h2>
                 
                 <div id="quizNameInput" class="bg-white rounded-2xl shadow-md p-8 max-w-xl mx-auto border text-center">
                     <div class="text-5xl mb-4">👋</div>
                     <h3 class="text-xl font-bold text-slate-800 mb-4">準備好開始測驗了嗎？</h3>
-                    <p class="text-sm text-slate-500 mb-6">請輸入您的姓名以開始挑戰並記錄成績：</p>
                     <input type="text" id="studentName" placeholder="例如：王小明" class="w-full p-3 border-2 border-slate-200 rounded-xl mb-6 outline-none text-center text-lg focus:border-blue-500">
                     <button id="startQuizBtn" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition">進入測驗</button>
+                    <div id="authStatusAlert" class="mt-4 p-3 rounded-lg text-xs font-bold bg-yellow-50 text-yellow-700 hidden"></div>
                 </div>
 
 
@@ -191,7 +152,7 @@
                         <span id="quizProgress" class="text-sm font-bold text-blue-600 bg-blue-100 px-3 py-1 rounded-full">問題 1 / 10</span>
                         <span id="quizScoreDisplay" class="text-sm font-medium text-slate-500">得分: 0</span>
                     </div>
-                    <h3 id="quizQuestion" class="text-xl font-medium mb-6 min-h-[60px]">載入中...</h3>
+                    <h3 id="quizQuestion" class="text-xl font-medium mb-6 min-h-[60px]"></h3>
                     <div id="quizOptions" class="space-y-3 mb-6"></div>
                     <div id="quizFeedback" class="hidden p-4 rounded-lg mb-6 text-sm"></div>
                     <div class="flex justify-end">
@@ -204,7 +165,7 @@
                         <div class="text-6xl mb-4">🎉</div>
                         <h3 class="text-2xl font-bold mb-2">測驗完成，<span id="resultName"></span>！</h3>
                         <p class="text-lg text-slate-600 mb-6">您的得分： <span id="finalScore" class="text-blue-600 font-bold text-4xl"></span> / 10</p>
-                        <div id="saveStatus" class="text-sm text-slate-500 mb-6 italic bg-slate-50 p-3 rounded-lg inline-block min-w-[200px]">成績儲存中...</div>
+                        <div id="saveStatus" class="text-sm font-bold p-3 rounded-lg inline-block min-w-[200px] bg-slate-100 text-slate-500 mb-6 italic">成績儲存中...</div>
                         <br>
                         <button onclick="location.reload()" class="bg-slate-200 text-slate-700 font-bold py-2 px-10 rounded-lg hover:bg-slate-300 transition">重新開始</button>
                     </div>
@@ -214,24 +175,16 @@
                         <h4 class="font-bold text-slate-800 mb-4 border-b pb-2 flex items-center justify-center gap-2">🏆 全班成績排行榜</h4>
                         <div class="overflow-y-auto max-h-64">
                             <table class="w-full text-left text-sm">
-                                <thead>
-                                    <tr class="text-slate-500 border-b">
-                                        <th class="py-2">姓名</th>
-                                        <th class="py-2 text-center">分數</th>
-                                        <th class="py-2 text-right">時間</th>
-                                    </tr>
-                                </thead>
+                                <thead><tr class="text-slate-500 border-b"><th class="py-2">姓名</th><th class="py-2 text-center">分數</th><th class="py-2 text-right">時間</th></tr></thead>
                                 <tbody id="scoreBoardBody"></tbody>
                             </table>
                             <div id="leaderboardError" class="hidden p-4 text-xs text-red-500 bg-red-50 rounded-lg mt-4 text-center">
-                                無法讀取排行榜。請檢查您的 Firebase Firestore 安全規則是否已開啟。
+                                無法讀取排行榜紀錄。請確認已開啟 Firebase 匿名登入與資料庫安全性規則。
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
-
-
         </div>
     </main>
 
@@ -243,6 +196,9 @@
         import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 
+        // ==========================================
+        // ✨ 已替換為主任的專屬 Firebase 設定 (reactionlaw)
+        // ==========================================
         const myFirebaseConfig = {
             apiKey: "AIzaSyAcGJmYLQl74d8jXmWljsnxvJ12ajHg0d0",
             authDomain: "reactionlaw.firebaseapp.com",
@@ -254,7 +210,7 @@
         };
         
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : myFirebaseConfig;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'reactionlaw-app'; // 統一 appId 路徑
+        const appId = 'reactionlaw-v1'; // 確保 appId 一致
 
 
         const app = initializeApp(firebaseConfig);
@@ -265,33 +221,31 @@
         let currentUser = null;
 
 
-        // 初始化身份驗證 (Rule 3)
-        const initFirebase = async () => {
-            try {
-                const userCredential = await signInAnonymously(auth);
-                currentUser = userCredential.user;
-                console.log("匿名登入成功:", currentUser.uid);
-                listenToScores();
-            } catch (err) {
-                console.error("Firebase 初始化失敗:", err);
-            }
-        };
-
-
+        // 規則 3：在查詢前確保身份驗證成功
         onAuthStateChanged(auth, (u) => {
-            currentUser = u;
-            if (u) listenToScores();
+            if (u) {
+                console.log("身份驗證成功，UID:", u.uid);
+                currentUser = u;
+                listenToScores(); // 登入後才開啟監聽
+            } else {
+                signInAnonymously(auth).catch(err => {
+                    console.error("匿名登入失敗:", err);
+                    const alertEl = document.getElementById('authStatusAlert');
+                    alertEl.classList.remove('hidden');
+                    alertEl.textContent = (err.code === 'auth/configuration-not-found') 
+                        ? "⚠️ 錯誤：您尚未在 Firebase 控制台『啟用匿名登入』功能！" 
+                        : "⚠️ 連線失敗：" + err.message;
+                });
+            }
         });
 
 
-        initFirebase();
-
-
-        // 讀取排行榜
+        // 讀取排行榜 (Rule 1 & 2)
         function listenToScores() {
             if (!currentUser) return;
-            const quizCol = collection(db, 'artifacts', appId, 'public', 'data', 'quiz_results');
+            const quizCol = collection(db, 'artifacts', appId, 'public', 'data', 'results');
             
+            // 加入 error callback (Rule 3)
             onSnapshot(quizCol, (snapshot) => {
                 const results = [];
                 snapshot.forEach(doc => results.push(doc.data()));
@@ -306,21 +260,21 @@
                 `).join('');
                 document.getElementById('leaderboardError').classList.add('hidden');
             }, (error) => {
-                console.error("Firestore 監聽失敗:", error);
+                console.error("Firestore 權限錯誤:", error);
                 document.getElementById('leaderboardError').classList.remove('hidden');
             });
         }
 
 
-        // 儲存成績與顯示成功字樣
+        // 成績存儲
         window.saveScore = async function(name, score) {
             const statusEl = document.getElementById('saveStatus');
             if (!currentUser) {
-                statusEl.textContent = "⚠️ 等待驗證中，請稍後...";
+                statusEl.textContent = "⚠️ 等待驗證中，請重新整理網頁。";
                 return;
             }
             try {
-                const quizCol = collection(db, 'artifacts', appId, 'public', 'data', 'quiz_results');
+                const quizCol = collection(db, 'artifacts', appId, 'public', 'data', 'results');
                 await addDoc(quizCol, {
                     name: name,
                     score: score,
@@ -328,10 +282,10 @@
                     uid: currentUser.uid
                 });
                 statusEl.textContent = "✅ 成績已上傳成功！";
-                statusEl.className = "text-sm text-green-500 font-bold mb-6 italic bg-green-50 p-3 rounded-lg inline-block min-w-[200px]";
+                statusEl.className = "text-sm text-green-600 font-bold mb-6 italic bg-green-50 p-3 rounded-lg inline-block min-w-[200px]";
             } catch (e) {
-                console.error("存儲成績失敗:", e);
-                statusEl.textContent = "❌ 存儲失敗，請檢查規則。";
+                console.error("存儲失敗:", e);
+                statusEl.textContent = "❌ 權限不足，請檢查資料庫 Rules！";
                 statusEl.className = "text-sm text-red-500 font-bold mb-6 italic bg-red-50 p-3 rounded-lg inline-block min-w-[200px]";
             }
         }
@@ -339,98 +293,86 @@
 
         // --- App 邏輯 ---
         const appState = {
-            studentName: '',
-            currentQuestionIndex: 0,
-            score: 0,
+            studentName: '', currentQuestionIndex: 0, score: 0,
             quizData: [
                 {
                     "question": "在反應式 $2A + B \\rightarrow 3C$ 中，若 A 的平均消耗速率為 $0.4\\ M/s$，則 C 的平均生成速率為何？",
                     "answerOptions": [
-                        {"text": "$0.4\\ M/s$", "rationale": "未考慮係數比 (2:3)。", "isCorrect": false},
-                        {"text": "$0.6\\ M/s$", "rationale": "速率比 = 係數比，$r_C = (3/2) \\times 0.4 = 0.6$。", "isCorrect": true},
-                        {"text": "$1.2\\ M/s$", "rationale": "計算錯誤。", "isCorrect": false},
-                        {"text": "$0.2\\ M/s$", "rationale": "比例分配錯誤。", "isCorrect": false}
+                        {"text": "$0.6\\ M/s$", "rationale": "速率比 = 係數比，故 $r_C = 1.5 \\times 0.4 = 0.6$。", "isCorrect": true},
+                        {"text": "$0.4\\ M/s$", "rationale": "未考慮 A 與 C 的係數比 (2:3)。", "isCorrect": false},
+                        {"text": "$0.2\\ M/s$", "rationale": "比例分配方向錯誤。", "isCorrect": false}
                     ]
                 },
                 {
                     "question": "定義反應速率時，為何在反應物濃度的變化量前要加上負號？",
                     "answerOptions": [
-                        {"text": "表示反應是可逆的", "rationale": "無關。", "isCorrect": false},
-                        {"text": "確保速率變為正值", "rationale": "反應物濃度減少(變化量負)，加負號變正。", "isCorrect": true},
-                        {"text": "表示反應熱為負值", "rationale": "無關。", "isCorrect": false},
-                        {"text": "科學界傳統", "rationale": "是有數學邏輯的物理定義。", "isCorrect": false}
+                        {"text": "確保速率變為正值", "rationale": "反應物濃度隨時間減少，變化量為負，加負號使速率恆正。", "isCorrect": true},
+                        {"text": "因為反應是可逆的", "rationale": "與可逆性無關。", "isCorrect": false},
+                        {"text": "表示反應熱為負值", "rationale": "與速率定義無直接關係。", "isCorrect": false}
                     ]
                 },
                 {
-                    "question": "下列哪一個反應最適合以「總壓力的變化」來測量反應速率？（定溫定容下）",
+                    "question": "定溫定容下，下列哪一個反應適合以「總壓力的變化」來測量反應速率？",
                     "answerOptions": [
-                        {"text": "$H_2(g) + I_2(g) \\rightarrow 2HI(g)$", "rationale": "兩側係數和相等，壓力不變。", "isCorrect": false},
-                        {"text": "$N_2(g) + 3H_2(g) \\rightarrow 2NH_3(g)$", "rationale": "分子數 4 變 2，壓力會顯著變化。", "isCorrect": true},
-                        {"text": "$Ag^+(aq) + Cl^-(aq) \\rightarrow AgCl(s)$", "rationale": "無氣體壓力變化。", "isCorrect": false},
-                        {"text": "$N_2(g) + O_2(g) \\rightarrow 2NO(g)$", "rationale": "壓力不變。", "isCorrect": false}
+                        {"text": "$N_2(g) + 3H_2(g) \\rightarrow 2NH_3(g)$", "rationale": "分子數改變 (4->2)，總壓會變。", "isCorrect": true},
+                        {"text": "$H_2(g) + I_2(g) \\rightarrow 2HI(g)$", "rationale": "係數相等，總壓不變。", "isCorrect": false},
+                        {"text": "$Ag^+(aq) + Cl^-(aq) \\rightarrow AgCl(s)$", "rationale": "無氣體壓力變化。", "isCorrect": false}
                     ]
                 },
                 {
                     "question": "關於速率常數 $k$ 的敘述，下列何者正確？",
                     "answerOptions": [
-                        {"text": "會隨濃度增加而變大", "rationale": "$k$ 不受濃度影響。", "isCorrect": false},
-                        {"text": "單位在任何反應皆相同", "rationale": "隨總級數改變。", "isCorrect": false},
                         {"text": "會隨溫度改變而改變", "rationale": "$k$ 受溫度、催化劑影響。", "isCorrect": true},
-                        {"text": "隨反應熱大小改變", "rationale": "熱力學概念與速率常數無關。", "isCorrect": false}
+                        {"text": "會隨反應物濃度增加而變大", "rationale": "$k$ 與濃度無關。", "isCorrect": false},
+                        {"text": "單位在任何反應皆相同", "rationale": "單位隨級數改變。", "isCorrect": false}
                     ]
                 },
                 {
                     "question": "若反應速率定律為 $r = k[A]^1[B]^2$，則此反應的總級數為？",
                     "answerOptions": [
+                        {"text": "3 級", "rationale": "總級數 = 次方和 (1+2=3)。", "isCorrect": true},
                         {"text": "1 級", "rationale": "僅 A 的級數。", "isCorrect": false},
-                        {"text": "3 級", "rationale": "級數和 $1+2=3$。", "isCorrect": true},
-                        {"text": "2 級", "rationale": "僅 B 的級數。", "isCorrect": false},
-                        {"text": "無法判斷", "rationale": "公式中次方已標明。", "isCorrect": false}
+                        {"text": "2 級", "rationale": "僅 B 的級數。", "isCorrect": false}
                     ]
                 },
                 {
                     "question": "若速率常數 $k$ 的單位為 $s^{-1}$，則該反應為幾級反應？",
                     "answerOptions": [
-                        {"text": "0 級", "rationale": "單位為 $M \cdot s^{-1}$。", "isCorrect": false},
                         {"text": "1 級", "rationale": "1 級反應 $k$ 單位為 $s^{-1}$。", "isCorrect": true},
-                        {"text": "2 級", "rationale": "單位為 $M^{-1}s^{-1}$。", "isCorrect": false},
-                        {"text": "3 級", "rationale": "單位為 $M^{-2}s^{-1}$。", "isCorrect": false}
+                        {"text": "0 級", "rationale": "0 級為 $M/s$。", "isCorrect": false},
+                        {"text": "2 級", "rationale": "2 級為 $1/(M \cdot s)$。", "isCorrect": false}
                     ]
                 },
                 {
-                    "question": "在濃度對時間的關係圖中，「某時刻」的瞬時速率相當於該點的？",
+                    "question": "在濃度對時間圖形中，切線斜率的絕對值代表？",
                     "answerOptions": [
-                        {"text": "割線斜率的絕對值", "rationale": "代表平均速率。", "isCorrect": false},
-                        {"text": "切線斜率的絕對值", "rationale": "即該時刻的瞬時變化率。", "isCorrect": true},
-                        {"text": "曲線下的面積", "rationale": "無直接速率意義。", "isCorrect": false},
-                        {"text": "座標軸的截距", "rationale": "代表濃度值。", "isCorrect": false}
+                        {"text": "瞬時速率", "rationale": "切線斜率即為該時刻瞬時變化率。", "isCorrect": true},
+                        {"text": "平均速率", "rationale": "割線斜率才是平均速率。", "isCorrect": false},
+                        {"text": "速率常數", "rationale": "斜率不等於速率常數。", "isCorrect": false}
                     ]
                 },
                 {
-                    "question": "若反應 $A \\rightarrow B$ 為零級反應，當 A 的濃度增加為 2 倍時，反應速率會發生什麼變化？",
+                    "question": "若為零級反應，當反應物 A 濃度增加為 2 倍時，反應速率？",
                     "answerOptions": [
-                        {"text": "速率變為 2 倍", "rationale": "這是 1 級反應。", "isCorrect": false},
-                        {"text": "速率變為 4 倍", "rationale": "這是 2 級反應。", "isCorrect": false},
-                        {"text": "速率不變", "rationale": "零級反應與濃度無關 ($r = k$)。", "isCorrect": true},
-                        {"text": "速率變為 $\sqrt{2}$ 倍", "rationale": "非零級特徵。", "isCorrect": false}
+                        {"text": "不變", "rationale": "零級速率與濃度無關 ($r=k$)。", "isCorrect": true},
+                        {"text": "變為 2 倍", "rationale": "這是 1 級特徵。", "isCorrect": false},
+                        {"text": "變為 4 倍", "rationale": "這是 2 級特徵。", "isCorrect": false}
                     ]
                 },
                 {
                     "question": "下列哪種物理量最不適合測定 $H_2(g) + Cl_2(g) \\rightarrow 2HCl(g)$ 的速率？",
                     "answerOptions": [
-                        {"text": "顏色的深淺", "rationale": "$Cl_2$ 具黃綠色。", "isCorrect": false},
-                        {"text": "pH 值的變化", "rationale": "$HCl$ 酸性可測。", "isCorrect": false},
-                        {"text": "定溫定容下的總壓力", "rationale": "左右分子數相等 ($1+1=2$)，總壓不變。", "isCorrect": true},
-                        {"text": "溶液的導電度", "rationale": "離子生成可測。", "isCorrect": false}
+                        {"text": "定溫定容下的總壓力", "rationale": "分子數不變 (2->2)，總壓不變。", "isCorrect": true},
+                        {"text": "顏色深淺", "rationale": "$Cl_2$ 具黃綠色，顏色會變。", "isCorrect": false},
+                        {"text": "pH 值的變化", "rationale": "$HCl$ 酸性可測量。", "isCorrect": false}
                     ]
                 },
                 {
-                    "question": "在實驗中，如果要找出反應物 A 的反應級數，應該如何操作？",
+                    "question": "實驗中，若要找出反應物 A 的反應級數，應該操作？",
                     "answerOptions": [
+                        {"text": "改變 A 濃度，保持其他不變", "rationale": "這是控制變因法。", "isCorrect": true},
                         {"text": "同時增加所有濃度", "rationale": "無法區分個體影響。", "isCorrect": false},
-                        {"text": "保持溫度不變即可", "rationale": "濃度需受控。", "isCorrect": false},
-                        {"text": "改變 A 濃度，保持其他不變", "rationale": "控制變因法，觀察 A 對速率的影響。", "isCorrect": true},
-                        {"text": "直接套用平衡係數", "rationale": "級數與係數不一定相等。", "isCorrect": false}
+                        {"text": "看平衡係數", "rationale": "級數需由實驗求得。", "isCorrect": false}
                     ]
                 }
             ]
@@ -441,15 +383,7 @@
             initNavigation();
             initChart();
             renderQuestion();
-            refreshMath();
         };
-
-
-        function refreshMath(element = null) {
-            if (window.MathJax && window.MathJax.typesetPromise) {
-                window.MathJax.typesetPromise(element ? [element] : []).catch(err => console.log(err));
-            }
-        }
 
 
         function initNavigation() {
@@ -460,8 +394,7 @@
                     btn.classList.add('active');
                     document.querySelectorAll('.section-content').forEach(s => s.classList.remove('active'));
                     document.getElementById(target).classList.add('active');
-                    if (target === 'sec-overview' && !window.concentrationChartInstance) initChart();
-                    refreshMath();
+                    if (window.MathJax) MathJax.typesetPromise();
                 });
             });
         }
@@ -470,7 +403,7 @@
         function initChart() {
             const canvas = document.getElementById('concentrationChart');
             if (!canvas) return;
-            window.concentrationChartInstance = new Chart(canvas.getContext('2d'), {
+            new Chart(canvas.getContext('2d'), {
                 type: 'line',
                 data: {
                     labels: [0, 5, 10, 15, 20],
@@ -490,11 +423,11 @@
             const b = parseFloat(document.getElementById('coefB').value);
             const c = parseFloat(document.getElementById('coefC').value);
             const rA = parseFloat(document.getElementById('rateA').value);
-            if (isNaN(a) || isNaN(b) || isNaN(c) || isNaN(rA) || a <= 0) return;
+            if (isNaN(a) || a <= 0) return;
             document.getElementById('resRateB').textContent = ((b / a) * rA).toFixed(3);
             document.getElementById('resRateC').textContent = ((c / a) * rA).toFixed(3);
             document.getElementById('calcResults').classList.remove('hidden');
-            refreshMath(document.getElementById('calcResults'));
+            if (window.MathJax) MathJax.typesetPromise();
         };
 
 
@@ -515,20 +448,17 @@
             document.getElementById('quizQuestion').innerHTML = q.question;
             const container = document.getElementById('quizOptions');
             container.innerHTML = '';
-            
             const shuffledOptions = [...q.answerOptions].sort(() => Math.random() - 0.5);
-            
             shuffledOptions.forEach((opt, idx) => {
                 const btn = document.createElement('button');
-                btn.className = "quiz-option w-full text-left p-4 rounded-xl border bg-slate-50 hover:border-blue-400 transition-colors";
+                btn.className = "quiz-option w-full text-left p-4 rounded-xl border bg-white hover:border-blue-400 transition-colors shadow-sm";
                 btn.innerHTML = `<strong>${String.fromCharCode(65+idx)}.</strong> ${opt.text}`;
                 btn.onclick = () => selectAnswer(opt, btn, shuffledOptions);
                 container.appendChild(btn);
             });
-            
             document.getElementById('quizFeedback').className = "hidden";
             document.getElementById('nextBtn').classList.add('hidden');
-            refreshMath(document.getElementById('quizContainer'));
+            if (window.MathJax) MathJax.typesetPromise();
         }
 
 
@@ -536,22 +466,16 @@
             const correct = selectedOpt.isCorrect;
             document.querySelectorAll('.quiz-option').forEach(b => b.disabled = true);
             btn.classList.add(correct ? 'selected-correct' : 'selected-wrong');
-            
             if (!correct) {
                 const allBtns = document.querySelectorAll('.quiz-option');
-                currentOptions.forEach((opt, i) => {
-                    if (opt.isCorrect) allBtns[i].classList.add('selected-correct');
-                });
-            } else {
-                appState.score++;
-            }
-            
+                currentOptions.forEach((opt, i) => { if (opt.isCorrect) allBtns[i].classList.add('selected-correct'); });
+            } else { appState.score++; }
             const fb = document.getElementById('quizFeedback');
             fb.innerHTML = `<strong>${correct ? '✅ 答對了！' : '❌ 答錯囉。'}</strong><br>${selectedOpt.rationale}`;
             fb.className = `p-4 rounded-lg mb-6 text-sm block ${correct ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`;
             document.getElementById('nextBtn').classList.remove('hidden');
             document.getElementById('quizScoreDisplay').textContent = `得分: ${appState.score}`;
-            refreshMath(fb);
+            if (window.MathJax) MathJax.typesetPromise();
         }
 
 
@@ -572,3 +496,4 @@
     </script>
 </body>
 </html>
+心
